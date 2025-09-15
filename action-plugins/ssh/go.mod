@@ -7,7 +7,7 @@ require (
 	github.com/melbahja/goph v1.4.0
 	github.com/v1Flows/runner v1.3.0
 	github.com/v1Flows/shared-library v1.0.25
-	golang.org/x/crypto v0.40.0
+	golang.org/x/crypto v0.42.0
 )
 
 require (
@@ -44,9 +44,9 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
