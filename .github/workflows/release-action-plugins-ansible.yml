@@ -20,7 +20,7 @@ jobs:
         working-directory: action-plugins/ansible
         run: |
           VERSION=$(cat .version)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check if Tag or Release Exists
         id: check-tag-release
@@ -29,14 +29,14 @@ jobs:
         run: |
           TAG_EXISTS=$(git ls-remote --tags origin | grep "refs/tags/ansible-v${{ steps.read_version.outputs.version }}" || true)
           RELEASE_EXISTS=$(gh release list --repo ${{ github.repository }} | grep "Release ansible v${{ steps.read_version.outputs.version }}" || true)
-          if [ -n "$TAG_EXISTS" ] || [ -n "$RELEASE_EXISTS" ]; then
+          if [ -n "${TAG_EXISTS}" ] || [ -n "${RELEASE_EXISTS}" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: '1.24'
 
@@ -44,14 +44,21 @@ jobs:
         if: steps.check-tag-release.outputs.skip == 'false'
         working-directory: action-plugins/ansible
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o ansible-v${{ steps.read_version.outputs.version }}-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -o ansible-v${{ steps.read_version.outputs.version }}-darwin-arm64
-          GOOS=linux GOARCH=amd64 go build -o ansible-v${{ steps.read_version.outputs.version }}-linux-amd64
-          GOOS=darwin GOARCH=amd64 go build -o ansible-latest-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -o ansible-latest-darwin-arm64
-          GOOS=linux GOARCH=amd64 go build -o ansible-latest-linux-amd64
+          # Build versioned binaries
+          for os in darwin linux; do
+            for arch in amd64 arm64; do
+              GOOS=${os} GOARCH=${arch} go build -o ansible-v${{ steps.read_version.outputs.version }}-${os}-${arch}
+            done
+          done
+          
+          # Build latest binaries
+          for os in darwin linux; do
+            for arch in amd64 arm64; do
+              GOOS=${os} GOARCH=${arch} go build -o ansible-latest-${os}-${arch}
+            done
+          done
 
-      - name: Create Tag
+      - name: Create Version Tag
         if: steps.check-tag-release.outputs.skip == 'false'
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
@@ -60,7 +67,7 @@ jobs:
           custom_tag: ansible-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
       
-      - name: Update -latest Tag
+      - name: Update Latest Tag
         if: steps.check-tag-release.outputs.skip == 'false'
         run: |
           set -e
@@ -81,6 +88,7 @@ jobs:
           artifacts: action-plugins/ansible/ansible-v${{ steps.read_version.outputs.version }}-*
           skipIfReleaseExists: true
           generateReleaseNotes: true
+          prerelease: false
           token: ${{ secrets.ACCESS_TOKEN }}
       
       - name: Create Latest Release

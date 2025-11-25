@@ -13,7 +13,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -163,7 +163,6 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	flow := false
 	execution := false
 	step := false
-	platform := false
 	workspace := false
 	alert := false
 
@@ -180,9 +179,6 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		}
 		if param.Key == "step" {
 			step, _ = strconv.ParseBool(param.Value)
-		}
-		if param.Key == "platform" {
-			platform, _ = strconv.ParseBool(param.Value)
 		}
 		if param.Key == "workspace" {
 			workspace, _ = strconv.ParseBool(param.Value)
@@ -207,7 +203,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "running",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -232,7 +228,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -271,19 +267,6 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		}
 	}
 
-	if platform {
-		// add separator
-		finalMessages = append(finalMessages, models.Line{
-			Content:   "-------------------- Platform --------------------",
-			Timestamp: time.Now(),
-		})
-
-		finalMessages = append(finalMessages, models.Line{
-			Content:   "Platform: " + request.Platform,
-			Timestamp: time.Now(),
-		})
-	}
-
 	if workspace {
 		// add separator
 		finalMessages = append(finalMessages, models.Line{
@@ -297,7 +280,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		})
 	}
 
-	if alert && request.Platform == "AlertFlow" {
+	if alert && request.Execution.AlertID != "" {
 		err := addJSONLines(show_sensitive_informations, &finalMessages, request.Alert, "Alert")
 		if err != nil {
 			return plugins.Response{
@@ -327,7 +310,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:     "success",
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -365,7 +348,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Debug",
 		Type:    "action",
-		Version: "1.0.0",
+		Version: "1.1.0-beta.1",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Debug",
@@ -407,15 +390,6 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Default:     "false",
 					Required:    false,
 					Description: "Show step data in the output messages. !CAUTION: This can leak sensitive information.",
-					Category:    "General",
-				},
-				{
-					Key:         "platform",
-					Title:       "Platform",
-					Type:        "boolean",
-					Default:     "false",
-					Required:    false,
-					Description: "Show platform data in the output messages",
 					Category:    "General",
 				},
 				{

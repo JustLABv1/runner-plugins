@@ -11,7 +11,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -65,14 +65,14 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "paused",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
 		}, err
 	}
 
-	executions.SetToPaused(request.Config, request.Execution, request.Platform)
+	executions.SetToPaused(request.Config, request.Execution)
 
 	select {
 	case <-time.After(time.Duration(waitTime) * time.Second):
@@ -97,7 +97,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -107,7 +107,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		return plugins.Response{Success: false, Canceled: true}, nil
 	}
 
-	executions.SetToRunning(request.Config, request.Execution, request.Platform)
+	executions.SetToRunning(request.Config, request.Execution)
 
 	err = executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
 		ID: request.Step.ID,
@@ -130,7 +130,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:     "success",
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -168,7 +168,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Wait",
 		Type:    "action",
-		Version: "1.4.2",
+		Version: "1.5.0-beta.1",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Wait",

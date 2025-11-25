@@ -11,7 +11,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -63,7 +63,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -94,21 +94,21 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		Interactive: true,
 		Status:      "interactionWaiting",
 		StartedAt:   time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
 		}, err
 	}
 
-	executions.SetToInteractionRequired(request.Config, request.Execution, request.Platform)
+	executions.SetToInteractionRequired(request.Config, request.Execution)
 
 	var stepData models.ExecutionSteps
 
 	// pull current action status from backend every 10 seconds
 	startTime := time.Now()
 	for {
-		stepData, err = executions.GetStep(request.Config, request.Execution.ID.String(), request.Step.ID.String(), request.Platform)
+		stepData, err = executions.GetStep(request.Config, request.Execution.ID.String(), request.Step.ID.String())
 
 		if stepData.Interacted {
 			break
@@ -147,7 +147,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				Interacted:          true,
 				InteractionApproved: true,
 				InteractionRejected: false,
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -160,7 +160,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		}
 	}
 
-	executions.SetToRunning(request.Config, request.Execution, request.Platform)
+	executions.SetToRunning(request.Config, request.Execution)
 
 	if stepData.InteractionRejected {
 		err = executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
@@ -187,7 +187,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			Interacted:          true,
 			InteractionRejected: true,
 			InteractionApproved: false,
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -219,7 +219,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			Interacted:          true,
 			InteractionRejected: false,
 			InteractionApproved: true,
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -261,7 +261,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Interaction",
 		Type:    "action",
-		Version: "1.4.3",
+		Version: "1.5.0-beta.1",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Interaction",

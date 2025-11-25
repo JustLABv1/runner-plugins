@@ -1,18 +1,35 @@
 #!/bin/bash
 
 # filepath: /Users/Justin.Neubert/projects/v1flows/runner-plugins/generate_workflows.sh
+# Generates GitHub workflows for all plugins with support for regular and pre-release versions
 
 set -euo pipefail
 
 WORKFLOWS_DIR=".github/workflows"
+GO_VERSION='1.24'
+
+# Color output for better readability
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
 mkdir -p "$WORKFLOWS_DIR"
 
-for type in action-plugins endpoint-plugins; do
-  echo "Processing type: $type"
-  for plugin in $(find "$type" -mindepth 1 -maxdepth 1 -type d -exec basename {} \;); do
-    echo "  Found plugin: $plugin"
-    cat <<EOL > "$WORKFLOWS_DIR/check-image-build-${type}-${plugin}.yml"
+# Detect if version is a pre-release (contains alpha, beta, rc, etc.)
+is_prerelease() {
+  local version="$1"
+  if [[ "$version" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+    return 0
+  fi
+  return 1
+}
+
+generate_check_workflow() {
+  local type="$1"
+  local plugin="$2"
+  local output_file="$WORKFLOWS_DIR/check-image-build-${type}-${plugin}.yml"
+  
+  cat > "$output_file" <<'EOL'
 name: Check $type Build - $plugin
 
 on:
@@ -31,17 +48,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '$GO_VERSION'
 
       - name: Build Plugin
         working-directory: $type/$plugin
         run: go build
 EOL
-    echo "Generated $WORKFLOWS_DIR/check-image-build-${type}-${plugin}.yml"
+  
+  # Perform actual variable substitution
+  sed -i '' "s|\$type|$type|g" "$output_file"
+  sed -i '' "s|\$plugin|$plugin|g" "$output_file"
+  sed -i '' "s|\$GO_VERSION|$GO_VERSION|g" "$output_file"
+  
+  echo -e "${GREEN}✓${NC} Generated $output_file"
+}
 
-    cat <<EOL > "$WORKFLOWS_DIR/release-${type}-${plugin}.yml"
+generate_stable_release_workflow() {
+  local type="$1"
+  local plugin="$2"
+  local output_file="$WORKFLOWS_DIR/release-${type}-${plugin}.yml"
+  
+  cat > "$output_file" <<'EOL'
 name: Release $type - $plugin
 
 on:
@@ -63,48 +92,55 @@ jobs:
         id: read_version
         working-directory: $type/$plugin
         run: |
-          VERSION=\$(cat .version)
-          echo "version=\$VERSION" >> \$GITHUB_OUTPUT
+          VERSION=$(cat .version)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check if Tag or Release Exists
         id: check-tag-release
         env:
-          GITHUB_TOKEN: \${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          TAG_EXISTS=\$(git ls-remote --tags origin | grep "refs/tags/$plugin-v\${{ steps.read_version.outputs.version }}" || true)
-          RELEASE_EXISTS=\$(gh release list --repo \${{ github.repository }} | grep "Release $plugin v\${{ steps.read_version.outputs.version }}" || true)
-          if [ -n "\$TAG_EXISTS" ] || [ -n "\$RELEASE_EXISTS" ]; then
-            echo "skip=true" >> \$GITHUB_OUTPUT
+          TAG_EXISTS=$(git ls-remote --tags origin | grep "refs/tags/$plugin-v${{ steps.read_version.outputs.version }}" || true)
+          RELEASE_EXISTS=$(gh release list --repo ${{ github.repository }} | grep "Release $plugin v${{ steps.read_version.outputs.version }}" || true)
+          if [ -n "${TAG_EXISTS}" ] || [ -n "${RELEASE_EXISTS}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "skip=false" >> \$GITHUB_OUTPUT
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '$GO_VERSION'
 
       - name: Build Plugin
         if: steps.check-tag-release.outputs.skip == 'false'
         working-directory: $type/$plugin
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o $plugin-v\${{ steps.read_version.outputs.version }}-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -o $plugin-v\${{ steps.read_version.outputs.version }}-darwin-arm64
-          GOOS=linux GOARCH=amd64 go build -o $plugin-v\${{ steps.read_version.outputs.version }}-linux-amd64
-          GOOS=darwin GOARCH=amd64 go build -o $plugin-latest-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -o $plugin-latest-darwin-arm64
-          GOOS=linux GOARCH=amd64 go build -o $plugin-latest-linux-amd64
+          # Build versioned binaries
+          for os in darwin linux; do
+            for arch in amd64 arm64; do
+              GOOS=${os} GOARCH=${arch} go build -o $plugin-v${{ steps.read_version.outputs.version }}-${os}-${arch}
+            done
+          done
+          
+          # Build latest binaries
+          for os in darwin linux; do
+            for arch in amd64 arm64; do
+              GOOS=${os} GOARCH=${arch} go build -o $plugin-latest-${os}-${arch}
+            done
+          done
 
-      - name: Create Tag
+      - name: Create Version Tag
         if: steps.check-tag-release.outputs.skip == 'false'
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
         with:
-          github_token: \${{ secrets.ACCESS_TOKEN }}
-          custom_tag: $plugin-v\${{ steps.read_version.outputs.version }}
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          custom_tag: $plugin-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
       
-      - name: Update -latest Tag
+      - name: Update Latest Tag
         if: steps.check-tag-release.outputs.skip == 'false'
         run: |
           set -e
@@ -120,12 +156,13 @@ jobs:
         id: create_version_release
         uses: ncipollo/release-action@v1
         with:
-          name: Release $plugin v\${{ steps.read_version.outputs.version }}
-          tag: \${{ steps.tag_version.outputs.new_tag }}
-          artifacts: $type/$plugin/$plugin-v\${{ steps.read_version.outputs.version }}-*
+          name: Release $plugin v${{ steps.read_version.outputs.version }}
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          artifacts: $type/$plugin/$plugin-v${{ steps.read_version.outputs.version }}-*
           skipIfReleaseExists: true
           generateReleaseNotes: true
-          token: \${{ secrets.ACCESS_TOKEN }}
+          prerelease: false
+          token: ${{ secrets.ACCESS_TOKEN }}
       
       - name: Create Latest Release
         if: steps.check-tag-release.outputs.skip == 'false'
@@ -137,11 +174,139 @@ jobs:
           artifacts: $type/$plugin/$plugin-latest-*
           skipIfReleaseExists: false
           generateReleaseNotes: false
-          token: \${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.ACCESS_TOKEN }}
 EOL
+  
+  # Perform actual variable substitution
+  sed -i '' "s|\$type|$type|g" "$output_file"
+  sed -i '' "s|\$plugin|$plugin|g" "$output_file"
+  sed -i '' "s|\$GO_VERSION|$GO_VERSION|g" "$output_file"
+  
+  echo -e "${GREEN}✓${NC} Generated $output_file"
+}
 
-    echo "Generated $WORKFLOWS_DIR/release-${type}-${plugin}.yml"
+generate_prerelease_workflow() {
+  local type="$1"
+  local plugin="$2"
+  local output_file="$WORKFLOWS_DIR/prerelease-${type}-${plugin}.yml"
+  
+  cat > "$output_file" <<'EOL'
+name: Pre-release $type - $plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "develop" ]
+    paths:
+      - "$type/$plugin/**"
+
+jobs:
+  check-version:
+    name: Check Pre-release Version
+    runs-on: ubuntu-latest
+    outputs:
+      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if Version is Pre-release
+        id: check
+        working-directory: $type/$plugin
+        run: |
+          VERSION=$(cat .version)
+          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-prerelease:
+    name: Build and Pre-release $plugin
+    needs: check-version
+    if: needs.check-version.outputs.is_prerelease == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read Plugin Version
+        id: read_version
+        working-directory: $type/$plugin
+        run: |
+          VERSION=$(cat .version)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Check if Tag or Release Exists
+        id: check-tag-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          TAG_EXISTS=$(git ls-remote --tags origin | grep "refs/tags/$plugin-v${{ steps.read_version.outputs.version }}" || true)
+          RELEASE_EXISTS=$(gh release list --repo ${{ github.repository }} | grep "Release $plugin v${{ steps.read_version.outputs.version }}" || true)
+          if [ -n "${TAG_EXISTS}" ] || [ -n "${RELEASE_EXISTS}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '$GO_VERSION'
+
+      - name: Build Plugin
+        if: steps.check-tag-release.outputs.skip == 'false'
+        working-directory: $type/$plugin
+        run: |
+          # Build for multiple platforms
+          for os in darwin linux; do
+            for arch in amd64 arm64; do
+              GOOS=${os} GOARCH=${arch} go build -o $plugin-v${{ steps.read_version.outputs.version }}-${os}-${arch}
+            done
+          done
+
+      - name: Create Version Tag
+        if: steps.check-tag-release.outputs.skip == 'false'
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          custom_tag: $plugin-v${{ steps.read_version.outputs.version }}
+          tag_prefix: ''
+
+      - name: Create Pre-release
+        if: steps.check-tag-release.outputs.skip == 'false'
+        id: create_prerelease
+        uses: ncipollo/release-action@v1
+        with:
+          name: Pre-release $plugin v${{ steps.read_version.outputs.version }}
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          artifacts: $type/$plugin/$plugin-v${{ steps.read_version.outputs.version }}-*
+          skipIfReleaseExists: true
+          generateReleaseNotes: true
+          prerelease: true
+          token: ${{ secrets.ACCESS_TOKEN }}
+EOL
+  
+  # Perform actual variable substitution
+  sed -i '' "s|\$type|$type|g" "$output_file"
+  sed -i '' "s|\$plugin|$plugin|g" "$output_file"
+  sed -i '' "s|\$GO_VERSION|$GO_VERSION|g" "$output_file"
+  
+  echo -e "${GREEN}✓${NC} Generated $output_file"
+}
+
+# Main loop
+echo -e "${BLUE}Generating GitHub workflows...${NC}"
+for type in action-plugins endpoint-plugins; do
+  echo -e "\n${BLUE}Processing: $type${NC}"
+  for plugin in $(find "$type" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort); do
+    echo "  Processing plugin: $plugin"
+    generate_check_workflow "$type" "$plugin"
+    generate_stable_release_workflow "$type" "$plugin"
+    generate_prerelease_workflow "$type" "$plugin"
   done
 done
 
-echo "Generated workflow files for all plugins in $WORKFLOWS_DIR"
+echo -e "\n${GREEN}✓ Successfully generated workflow files for all plugins in $WORKFLOWS_DIR${NC}"

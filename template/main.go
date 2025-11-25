@@ -10,7 +10,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -63,7 +63,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -89,7 +89,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "running",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -110,7 +110,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 			},
 		},
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -134,7 +134,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:     "success",
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,

@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
-	"github.com/v1Flows/shared-library/pkg/models"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -108,7 +108,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -134,7 +134,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "running",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -170,7 +170,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "error",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -226,7 +226,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "error",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -262,7 +262,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "error",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -296,7 +296,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "error",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -336,7 +336,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "error",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -365,7 +365,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:     "success",
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -403,7 +403,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Git",
 		Type:    "action",
-		Version: "1.3.5",
+		Version: "1.4.0-beta.1",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Git",
