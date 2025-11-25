@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "endpoint-plugins/alertmanager/**"
+      - "endpoint-plugins/alertmanager/.version"
+      - "endpoint-plugins/alertmanager/**/*.go"
 
 jobs:
   build-and-release:

@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "action-plugins/terraform/**"
+      - "action-plugins/terraform/.version"
+      - "action-plugins/terraform/**/*.go"
 
 jobs:
   build-and-release:

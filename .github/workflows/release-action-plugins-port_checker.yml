@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "action-plugins/port_checker/**"
+      - "action-plugins/port_checker/.version"
+      - "action-plugins/port_checker/**/*.go"
 
 jobs:
   build-and-release:

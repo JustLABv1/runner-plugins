@@ -18,7 +18,7 @@ mkdir -p "$WORKFLOWS_DIR"
 # Detect if version is a pre-release (contains alpha, beta, rc, etc.)
 is_prerelease() {
   local version="$1"
-  if [[ "$version" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+  if [[ "$version" =~ -(alpha|beta|rc|a|b) ]]; then
     return 0
   fi
   return 1
@@ -78,7 +78,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "$type/$plugin/**"
+      - "$type/$plugin/.version"
+      - "$type/$plugin/**/*.go"
 
 jobs:
   build-and-release:
@@ -198,7 +199,8 @@ on:
   push:
     branches: [ "develop" ]
     paths:
-      - "$type/$plugin/**"
+      - "$type/$plugin/.version"
+      - "$type/$plugin/**/*.go"
 
 jobs:
   check-version:
@@ -215,7 +217,7 @@ jobs:
         working-directory: $type/$plugin
         run: |
           VERSION=$(cat .version)
-          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b) ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "is_prerelease=false" >> $GITHUB_OUTPUT

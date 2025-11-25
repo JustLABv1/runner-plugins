@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "action-plugins/mail/**"
+      - "action-plugins/mail/.version"
+      - "action-plugins/mail/**/*.go"
 
 jobs:
   build-and-release:

@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "action-plugins/interaction/**"
+      - "action-plugins/interaction/.version"
+      - "action-plugins/interaction/**/*.go"
 
 jobs:
   build-and-release:
