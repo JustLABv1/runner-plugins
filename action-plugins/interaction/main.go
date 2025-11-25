@@ -261,7 +261,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Interaction",
 		Type:    "action",
-		Version: "1.5.0-beta.1",
+		Version: "1.5.0-beta.2",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Interaction",

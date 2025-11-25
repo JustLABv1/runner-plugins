@@ -403,7 +403,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Git",
 		Type:    "action",
-		Version: "1.4.0-beta.1",
+		Version: "1.4.0-beta.2",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Git",
