@@ -13,7 +13,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -48,7 +48,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		}
 	}
 
-	if strings.Contains(additionalMessage, "payload.") && request.Platform == "alertflow" {
+	if strings.Contains(additionalMessage, "payload.") && request.Execution.AlertID != "" {
 		// convert payload to string
 		payloadBytes, err := json.Marshal(request.Alert.Payload)
 		if err != nil {
@@ -79,7 +79,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -126,7 +126,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		Status:     "success",
 		StartedAt:  time.Now(),
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -164,7 +164,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Log",
 		Type:    "action",
-		Version: "1.4.3",
+		Version: "1.5.0",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Log Message",

@@ -12,8 +12,7 @@ import (
 	"github.com/v1Flows/runner/pkg/flows"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	af_models "github.com/v1Flows/alertFlow/services/backend/pkg/models"
-	shared_models "github.com/v1Flows/shared-library/pkg/models"
+	models "github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"time"
 
@@ -24,6 +23,10 @@ import (
 type Payload struct {
 	Receiver string `json:"receiver"`
 	Status   string `json:"status"`
+}
+
+type IncomingFlow struct {
+	Flow models.Flows `json:"flow"`
 }
 
 func parseTime(timeStr string) time.Time {
@@ -50,12 +53,6 @@ func (p *AlertmanagerEndpointPlugin) CancelTask(request plugins.CancelTaskReques
 }
 
 func (p *AlertmanagerEndpointPlugin) EndpointRequest(request plugins.EndpointRequest) (plugins.Response, error) {
-	if request.Platform != "alertflow" {
-		return plugins.Response{
-			Success: false,
-		}, fmt.Errorf("platform not supported")
-	}
-
 	if request.Body == nil {
 		return plugins.Response{
 			Success: false,
@@ -67,10 +64,10 @@ func (p *AlertmanagerEndpointPlugin) EndpointRequest(request plugins.EndpointReq
 	payload := Payload{}
 	json.Unmarshal(incPayload, &payload)
 
-	alertData := af_models.Alerts{
+	alertData := models.Alerts{
 		Payload:  incPayload,
 		FlowID:   payload.Receiver,
-		RunnerID: request.Config.Alertflow.RunnerID,
+		RunnerID: request.Config.ExFlow.RunnerID,
 		Plugin:   "Alertmanager",
 		Status:   payload.Status,
 	}
@@ -87,7 +84,7 @@ func (p *AlertmanagerEndpointPlugin) EndpointRequest(request plugins.EndpointReq
 	// get sub alerts
 	if gjson.Get(payloadString, "alerts").Exists() {
 		for _, alert := range gjson.Get(payloadString, "alerts").Array() {
-			alertData.SubAlerts = append(alertData.SubAlerts, af_models.SubAlerts{
+			alertData.SubAlerts = append(alertData.SubAlerts, models.SubAlerts{
 				ID:         uuid.New().String(),
 				Name:       alert.Get("labels.alertname").String(),
 				Status:     alert.Get("status").String(),
@@ -99,31 +96,31 @@ func (p *AlertmanagerEndpointPlugin) EndpointRequest(request plugins.EndpointReq
 	}
 
 	// get flow data
-	bytes, err := flows.GetFlowData(request.Config, payload.Receiver, request.Platform)
+	flowBytes, err := flows.GetFlowData(request.Config, payload.Receiver)
 	if err != nil {
 		return plugins.Response{
 			Success: false,
 		}, err
 	}
 
-	if bytes == nil {
+	if flowBytes == nil {
 		return plugins.Response{
 			Success: false,
 		}, fmt.Errorf("flow not found")
 	}
 
-	flow := af_models.Flows{}
-	err = json.Unmarshal(bytes, &flow)
+	flow := IncomingFlow{}
+	err = json.Unmarshal(flowBytes, &flow)
 	if err != nil {
 		return plugins.Response{
 			Success: false,
 		}, err
 	}
 
-	if flow.GroupAlerts {
+	if flow.Flow.GroupAlerts {
 		// check if payload matched the group key identifier
-		if gjson.Get(payloadString, flow.GroupAlertsIdentifier).Exists() {
-			alertData.GroupKey = flow.GroupAlertsIdentifier + "=" + gjson.Get(payloadString, flow.GroupAlertsIdentifier).String()
+		if gjson.Get(payloadString, flow.Flow.GroupAlertsIdentifier).Exists() {
+			alertData.GroupKey = flow.Flow.GroupAlertsIdentifier + "=" + gjson.Get(payloadString, flow.Flow.GroupAlertsIdentifier).String()
 
 			// get grouped alerts
 			groupedAlerts, err := alerts.GetGroupedAlerts(request.Config, payload.Receiver, alertData.GroupKey)
@@ -141,20 +138,25 @@ func (p *AlertmanagerEndpointPlugin) EndpointRequest(request plugins.EndpointReq
 	}
 
 	// check if alert is resolved
-	alerts.SendAlert(request.Config, alertData)
+	err = alerts.SendAlert(request.Config, alertData)
+	if err != nil {
+		return plugins.Response{
+			Success: false,
+		}, err
+	}
 
 	return plugins.Response{
 		Success: true,
 	}, nil
 }
 
-func (p *AlertmanagerEndpointPlugin) Info(request plugins.InfoRequest) (shared_models.Plugin, error) {
-	return shared_models.Plugin{
+func (p *AlertmanagerEndpointPlugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
+	return models.Plugin{
 		Name:    "Alertmanager",
 		Type:    "endpoint",
-		Version: "1.2.7",
+		Version: "1.3.0",
 		Author:  "JustNZ",
-		Endpoint: shared_models.Endpoint{
+		Endpoint: models.Endpoint{
 			ID:    "alertmanager",
 			Name:  "Alertmanager",
 			Path:  "/alertmanager",
@@ -187,7 +189,7 @@ func (s *PluginRPCServer) EndpointRequest(request plugins.EndpointRequest, resp 
 	return err
 }
 
-func (s *PluginRPCServer) Info(request plugins.InfoRequest, resp *shared_models.Plugin) error {
+func (s *PluginRPCServer) Info(request plugins.InfoRequest, resp *models.Plugin) error {
 	result, err := s.Impl.Info(request)
 	*resp = result
 	return err

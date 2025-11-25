@@ -20,7 +20,14 @@ jobs:
         working-directory: action-plugins/ssh
         run: |
           VERSION=$(cat .version)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          
+          # Check if pre-release
+          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Check if Tag or Release Exists
         id: check-tag-release
@@ -29,14 +36,14 @@ jobs:
         run: |
           TAG_EXISTS=$(git ls-remote --tags origin | grep "refs/tags/ssh-v${{ steps.read_version.outputs.version }}" || true)
           RELEASE_EXISTS=$(gh release list --repo ${{ github.repository }} | grep "Release ssh v${{ steps.read_version.outputs.version }}" || true)
-          if [ -n "$TAG_EXISTS" ] || [ -n "$RELEASE_EXISTS" ]; then
+          if [ -n "${TAG_EXISTS}" ] || [ -n "${RELEASE_EXISTS}" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: '1.24'
 
@@ -44,14 +51,23 @@ jobs:
         if: steps.check-tag-release.outputs.skip == 'false'
         working-directory: action-plugins/ssh
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o ssh-v${{ steps.read_version.outputs.version }}-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -o ssh-v${{ steps.read_version.outputs.version }}-darwin-arm64
-          GOOS=linux GOARCH=amd64 go build -o ssh-v${{ steps.read_version.outputs.version }}-linux-amd64
-          GOOS=darwin GOARCH=amd64 go build -o ssh-latest-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -o ssh-latest-darwin-arm64
-          GOOS=linux GOARCH=amd64 go build -o ssh-latest-linux-amd64
+          # Build for multiple platforms
+          for os in darwin linux; do
+            for arch in amd64 arm64; do
+              GOOS=${os} GOARCH=${arch} go build -o ssh-v${{ steps.read_version.outputs.version }}-${os}-${arch}
+            done
+          done
+          
+          # Build latest binaries (only for non-pre-releases)
+          if [ "${{ steps.read_version.outputs.is_prerelease }}" = "false" ]; then
+            for os in darwin linux; do
+              for arch in amd64 arm64; do
+                GOOS=${os} GOARCH=${arch} go build -o ssh-latest-${os}-${arch}
+              done
+            done
+          fi
 
-      - name: Create Tag
+      - name: Create Version Tag
         if: steps.check-tag-release.outputs.skip == 'false'
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
@@ -60,8 +76,10 @@ jobs:
           custom_tag: ssh-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
       
-      - name: Update -latest Tag
-        if: steps.check-tag-release.outputs.skip == 'false'
+      - name: Update Latest Tag
+        if: |
+          steps.check-tag-release.outputs.skip == 'false' &&
+          steps.read_version.outputs.is_prerelease == 'false'
         run: |
           set -e
           # Delete local and remote -latest tag if it exists
@@ -81,10 +99,13 @@ jobs:
           artifacts: action-plugins/ssh/ssh-v${{ steps.read_version.outputs.version }}-*
           skipIfReleaseExists: true
           generateReleaseNotes: true
+          prerelease: ${{ steps.read_version.outputs.is_prerelease }}
           token: ${{ secrets.ACCESS_TOKEN }}
       
       - name: Create Latest Release
-        if: steps.check-tag-release.outputs.skip == 'false'
+        if: |
+          steps.check-tag-release.outputs.skip == 'false' &&
+          steps.read_version.outputs.is_prerelease == 'false'
         id: create_latest_release
         uses: ncipollo/release-action@v1
         with:

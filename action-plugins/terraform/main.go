@@ -12,7 +12,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/hashicorp/terraform-exec/tfexec"
@@ -85,7 +85,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "error",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -121,7 +121,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -146,7 +146,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "running",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -181,7 +181,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "error",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -208,7 +208,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 		},
 		Status: "running",
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -233,7 +233,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -266,7 +266,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "error",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -293,7 +293,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 		},
 		Status: "running",
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -324,7 +324,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "error",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -351,7 +351,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 			},
 			Status: "running",
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -383,7 +383,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "error",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -411,7 +411,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 				},
 				Status: "running",
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -447,7 +447,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 						},
 						Status:     "error",
 						FinishedAt: time.Now(),
-					}, request.Platform)
+					})
 					if err != nil {
 						return plugins.Response{
 							Success: false,
@@ -491,7 +491,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 						},
 					},
 					Status: "running",
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -516,7 +516,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 				},
 				Status: "running",
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -543,7 +543,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -572,7 +572,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "error",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -607,7 +607,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "error",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -634,7 +634,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 			},
 			Status: "running",
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -658,7 +658,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:     "success",
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -696,7 +696,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Terraform",
 		Type:    "action",
-		Version: "1.0.3",
+		Version: "1.1.0",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Terraform",

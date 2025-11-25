@@ -15,8 +15,7 @@ import (
 	"github.com/v1Flows/runner/pkg/flows"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	af_models "github.com/v1Flows/alertFlow/services/backend/pkg/models"
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -52,22 +51,17 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	}()
 
 	flowID := ""
-	alertID := ""
 	logData := false
 
 	if val, ok := request.Args["FlowID"]; ok {
 		flowID = val
 	}
 
-	if val, ok := request.Args["AlertID"]; ok {
-		alertID = val
-	}
-
 	if val, ok := request.Args["LogData"]; ok {
 		logData, _ = strconv.ParseBool(val)
 	}
 
-	if request.Step.Action.Params != nil && flowID == "" && alertID == "" {
+	if request.Step.Action.Params != nil && flowID == "" {
 		for _, param := range request.Step.Action.Params {
 			if param.Key == "LogData" {
 				logData, _ = strconv.ParseBool(param.Value)
@@ -75,13 +69,10 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			if param.Key == "FlowID" {
 				flowID = param.Value
 			}
-			if param.Key == "AlertID" {
-				alertID = param.Value
-			}
 		}
 	}
 
-	if flowID == "" || (request.Platform == "alertflow" && alertID == "") {
+	if flowID == "" {
 		_ = executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
 			ID: request.Step.ID,
 			Messages: []models.Message{
@@ -89,7 +80,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					Title: "Collecting Data",
 					Lines: []models.Line{
 						{
-							Content:   "FlowID and AlertID are required",
+							Content:   "FlowID is required",
 							Color:     "danger",
 							Timestamp: time.Now(),
 						},
@@ -98,11 +89,11 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "error",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 
 		return plugins.Response{
 			Success: false,
-		}, errors.New("flowid and alertid are required")
+		}, errors.New("flowid is required")
 	}
 
 	err := executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
@@ -112,7 +103,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				Title: "Collecting Data",
 				Lines: []models.Line{
 					{
-						Content:   "Collecting data from " + request.Platform,
+						Content:   "Collecting data",
 						Timestamp: time.Now(),
 					},
 				},
@@ -120,7 +111,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "running",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -145,7 +136,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -156,7 +147,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	}
 
 	// Get Flow Data
-	flowBytes, err := flows.GetFlowData(request.Config, flowID, request.Platform)
+	flowBytes, err := flows.GetFlowData(request.Config, flowID)
 	if err != nil && flowBytes == nil {
 		err := executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
 			ID: request.Step.ID,
@@ -179,7 +170,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "error",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -215,7 +206,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "error",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -236,15 +227,15 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 			},
 		},
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
 		}, err
 	}
 
-	var alert af_models.Alerts
-	if request.Platform == "alertflow" && alertID != "" {
+	var alert models.Alerts
+	if request.Execution.AlertID != "" {
 		// Check for cancellation before each major step
 		if ctx.Err() != nil {
 			err := executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
@@ -263,7 +254,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "canceled",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -274,7 +265,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		}
 
 		// Get Alert Data
-		alert, err = alerts.GetData(request.Config, alertID)
+		alert, err = alerts.GetData(request.Config, request.Execution.AlertID)
 		if err != nil {
 			err := executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
 				ID: request.Step.ID,
@@ -297,7 +288,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 				},
 				Status:     "error",
 				FinishedAt: time.Now(),
-			}, request.Platform)
+			})
 			if err != nil {
 				return plugins.Response{
 					Success: false,
@@ -323,7 +314,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 				},
 			},
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -347,7 +338,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			Content:   fmt.Sprintf("%v", flow.Flow),
 			Timestamp: time.Now(),
 		})
-		if request.Platform == "alertflow" && alertID != "" {
+		if request.Execution.AlertID != "" {
 			finalMessages = append(finalMessages, models.Line{
 				Content:   "Alert Data:",
 				Timestamp: time.Now(),
@@ -375,7 +366,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:     "success",
 		FinishedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -416,7 +407,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Collect Data",
 		Type:    "action",
-		Version: "1.3.5",
+		Version: "1.4.0",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Collect Data",
@@ -439,14 +430,6 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Default:     "00000000-0000-0000-0000-00000000",
 					Required:    true,
 					Description: "The Flow ID to collect data from",
-					Category:    "General",
-				},
-				{
-					Key:         "AlertID",
-					Type:        "text",
-					Default:     "00000000-0000-0000-0000-00000000",
-					Required:    false,
-					Description: "The Alert ID to collect data from. Required for AlertFlow platform",
 					Category:    "General",
 				},
 			},

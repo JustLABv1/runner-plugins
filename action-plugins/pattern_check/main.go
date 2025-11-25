@@ -13,8 +13,7 @@ import (
 	"github.com/v1Flows/runner/pkg/executions"
 	"github.com/v1Flows/runner/pkg/plugins"
 
-	af_models "github.com/v1Flows/alertFlow/services/backend/pkg/models"
-	"github.com/v1Flows/shared-library/pkg/models"
+	"github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -24,7 +23,7 @@ type Receiver struct {
 }
 
 type IncomingFlow struct {
-	Flow af_models.Flows `json:"flow"`
+	Flow models.Flows `json:"flow"`
 }
 
 // Plugin is an implementation of the Plugin interface
@@ -49,12 +48,6 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		taskCancelsMu.Unlock()
 	}()
 
-	if request.Platform != "alertflow" {
-		return plugins.Response{
-			Success: false,
-		}, errors.New("platform not supported")
-	}
-
 	// Check for cancellation before each major step
 	if ctx.Err() != nil {
 		err := executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
@@ -73,7 +66,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "canceled",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -98,21 +91,13 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		},
 		Status:    "running",
 		StartedAt: time.Now(),
-	}, request.Platform)
+	})
 	if err != nil {
 		return plugins.Response{}, err
 	}
 
-	var flow IncomingFlow
-	err = json.Unmarshal(request.FlowBytes, &flow)
-	if err != nil {
-		return plugins.Response{
-			Success: false,
-		}, err
-	}
-
 	// end if there are no patterns
-	if len(flow.Flow.Patterns) == 0 {
+	if len(request.Flow.Patterns) == 0 {
 		err = executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
 			ID: request.Step.ID,
 			Messages: []models.Message{
@@ -133,7 +118,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "success",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -156,7 +141,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 
 	patternMissMatched := 0
 
-	for _, pattern := range flow.Flow.Patterns {
+	for _, pattern := range request.Flow.Patterns {
 		value := gjson.Get(payloadString, pattern.Key)
 
 		if pattern.Type == "equals" {
@@ -180,7 +165,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 							},
 						},
 					},
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -203,7 +188,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "canceled",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -232,7 +217,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 							},
 						},
 					},
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -255,7 +240,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "canceled",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -284,7 +269,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 							},
 						},
 					},
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{}, err
 				}
@@ -305,7 +290,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "canceled",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -334,7 +319,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 							},
 						},
 					},
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -357,7 +342,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 					},
 					Status:     "canceled",
 					FinishedAt: time.Now(),
-				}, request.Platform)
+				})
 				if err != nil {
 					return plugins.Response{
 						Success: false,
@@ -390,7 +375,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "noPatternMatch",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -424,7 +409,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			},
 			Status:     "success",
 			FinishedAt: time.Now(),
-		}, request.Platform)
+		})
 		if err != nil {
 			return plugins.Response{
 				Success: false,
@@ -462,7 +447,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Pattern Check",
 		Type:    "action",
-		Version: "1.4.3",
+		Version: "1.5.0",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Pattern Check",
