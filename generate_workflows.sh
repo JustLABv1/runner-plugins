@@ -100,7 +100,7 @@ jobs:
       - name: Check if Tag or Release Exists
         id: check-tag-release
         env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_EXISTS=$(git ls-remote --tags origin | grep "refs/tags/$plugin-v${{ steps.read_version.outputs.version }}" || true)
           RELEASE_EXISTS=$(gh release list --repo ${{ github.repository }} | grep "Release $plugin v${{ steps.read_version.outputs.version }}" || true)
@@ -164,7 +164,7 @@ jobs:
           skipIfReleaseExists: true
           generateReleaseNotes: true
           prerelease: false
-          token: ${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Create Latest Release
         if: steps.check-tag-release.outputs.skip == 'false'
@@ -176,7 +176,7 @@ jobs:
           artifacts: $type/$plugin/$plugin-latest-*
           skipIfReleaseExists: false
           generateReleaseNotes: false
-          token: ${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 EOL
   
   # Perform actual variable substitution
@@ -244,7 +244,7 @@ jobs:
       - name: Check if Tag or Release Exists
         id: check-tag-release
         env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_EXISTS=$(git ls-remote --tags origin | grep "refs/tags/$plugin-v${{ steps.read_version.outputs.version }}" || true)
           RELEASE_EXISTS=$(gh release list --repo ${{ github.repository }} | grep "Release $plugin v${{ steps.read_version.outputs.version }}" || true)
@@ -290,7 +290,7 @@ jobs:
           skipIfReleaseExists: true
           generateReleaseNotes: true
           prerelease: true
-          token: ${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 EOL
   
   # Perform actual variable substitution
