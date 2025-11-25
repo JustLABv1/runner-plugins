@@ -12,6 +12,7 @@ jobs:
   build-and-release:
     name: Build and Release log
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,7 +65,7 @@ jobs:
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
         with:
-          github_token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: log-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
       

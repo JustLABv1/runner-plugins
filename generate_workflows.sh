@@ -85,6 +85,7 @@ jobs:
   build-and-release:
     name: Build and Release $plugin
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -137,7 +138,7 @@ jobs:
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
         with:
-          github_token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: $plugin-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
       
@@ -228,6 +229,7 @@ jobs:
     needs: check-version
     if: needs.check-version.outputs.is_prerelease == 'true'
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -273,7 +275,7 @@ jobs:
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
         with:
-          github_token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: $plugin-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
 
