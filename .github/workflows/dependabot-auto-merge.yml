@@ -1,0 +1,68 @@
+name: Dependabot Auto Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  dependabot-auto-merge:
+    name: Auto Merge Dependabot PR
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Fetch PR Details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            console.log('PR Status:', pr.data.state);
+            console.log('PR Author:', pr.data.user.login);
+            return pr.data;
+
+      - name: Enable Auto-Merge (Squash)
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            // Enable auto-merge using GraphQL
+            try {
+              const result = await github.graphql(`
+                mutation EnableAutoMerge($pullRequestId:ID!) {
+                  enablePullRequestAutoMerge(input: {
+                    pullRequestId: $pullRequestId
+                    mergeMethod: SQUASH
+                  }) {
+                    pullRequest {
+                      autoMergeRequest {
+                        enabledAt
+                        mergeMethod
+                      }
+                    }
+                  }
+                }
+              `, {
+                pullRequestId: pr.data.node_id,
+              });
+              
+              console.log('✓ Auto-merge enabled for PR #' + context.issue.number);
+              console.log('Merge method: SQUASH');
+            } catch (error) {
+              // Auto-merge might already be enabled or PR might need status checks to pass first
+              console.log('Auto-merge setup (will auto-merge once checks pass):', error.message);
+            }
+

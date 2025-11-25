@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "develop" ]
     paths:
-      - "action-plugins/terraform/**"
+      - "action-plugins/terraform/.version"
+      - "action-plugins/terraform/**/*.go"
 
 jobs:
   check-version:
@@ -22,7 +23,7 @@ jobs:
         working-directory: action-plugins/terraform
         run: |
           VERSION=$(cat .version)
-          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b) ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "is_prerelease=false" >> $GITHUB_OUTPUT

@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "action-plugins/ssh/**"
+      - "action-plugins/ssh/.version"
+      - "action-plugins/ssh/**/*.go"
 
 jobs:
   build-and-release:

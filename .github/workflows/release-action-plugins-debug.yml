@@ -5,7 +5,8 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "action-plugins/debug/**"
+      - "action-plugins/debug/.version"
+      - "action-plugins/debug/**/*.go"
 
 jobs:
   build-and-release:
