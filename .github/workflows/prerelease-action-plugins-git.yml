@@ -1,15 +1,37 @@
-name: Release action-plugins - git
+name: Pre-release action-plugins - git
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "develop" ]
     paths:
       - "action-plugins/git/**"
 
 jobs:
-  build-and-release:
-    name: Build and Release git
+  check-version:
+    name: Check Pre-release Version
+    runs-on: ubuntu-latest
+    outputs:
+      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if Version is Pre-release
+        id: check
+        working-directory: action-plugins/git
+        run: |
+          VERSION=$(cat .version)
+          if [[ "${VERSION}" =~ -(alpha|beta|rc|a|b)([0-9]*)?$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-prerelease:
+    name: Build and Pre-release git
+    needs: check-version
+    if: needs.check-version.outputs.is_prerelease == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -44,17 +66,10 @@ jobs:
         if: steps.check-tag-release.outputs.skip == 'false'
         working-directory: action-plugins/git
         run: |
-          # Build versioned binaries
+          # Build for multiple platforms
           for os in darwin linux; do
             for arch in amd64 arm64; do
               GOOS=${os} GOARCH=${arch} go build -o git-v${{ steps.read_version.outputs.version }}-${os}-${arch}
-            done
-          done
-          
-          # Build latest binaries
-          for os in darwin linux; do
-            for arch in amd64 arm64; do
-              GOOS=${os} GOARCH=${arch} go build -o git-latest-${os}-${arch}
             done
           done
 
@@ -66,39 +81,16 @@ jobs:
           github_token: ${{ secrets.ACCESS_TOKEN }}
           custom_tag: git-v${{ steps.read_version.outputs.version }}
           tag_prefix: ''
-      
-      - name: Update Latest Tag
-        if: steps.check-tag-release.outputs.skip == 'false'
-        run: |
-          set -e
-          # Delete local and remote -latest tag if it exists
-          git tag -d git-latest 2>/dev/null || true
-          git push origin :refs/tags/git-latest 2>/dev/null || true
-          # Create new -latest tag at current commit
-          git tag git-latest
-          git push origin git-latest --force
 
-      - name: Create Version Release
+      - name: Create Pre-release
         if: steps.check-tag-release.outputs.skip == 'false'
-        id: create_version_release
+        id: create_prerelease
         uses: ncipollo/release-action@v1
         with:
-          name: Release git v${{ steps.read_version.outputs.version }}
+          name: Pre-release git v${{ steps.read_version.outputs.version }}
           tag: ${{ steps.tag_version.outputs.new_tag }}
           artifacts: action-plugins/git/git-v${{ steps.read_version.outputs.version }}-*
           skipIfReleaseExists: true
           generateReleaseNotes: true
-          prerelease: false
-          token: ${{ secrets.ACCESS_TOKEN }}
-      
-      - name: Create Latest Release
-        if: steps.check-tag-release.outputs.skip == 'false'
-        id: create_latest_release
-        uses: ncipollo/release-action@v1
-        with:
-          name: Release git latest
-          tag: git-latest
-          artifacts: action-plugins/git/git-latest-*
-          skipIfReleaseExists: false
-          generateReleaseNotes: false
+          prerelease: true
           token: ${{ secrets.ACCESS_TOKEN }}
