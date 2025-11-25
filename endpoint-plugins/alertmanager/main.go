@@ -154,7 +154,7 @@ func (p *AlertmanagerEndpointPlugin) Info(request plugins.InfoRequest) (models.P
 	return models.Plugin{
 		Name:    "Alertmanager",
 		Type:    "endpoint",
-		Version: "1.3.0-beta.2",
+		Version: "1.3.0-beta.1",
 		Author:  "JustNZ",
 		Endpoint: models.Endpoint{
 			ID:    "alertmanager",
