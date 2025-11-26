@@ -45,7 +45,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	}()
 
 	tf_version := ""
-	workdir := request.Workspace
+	workdir := ""
 	init := false
 	plan := false
 	plan_output := ""
@@ -57,7 +57,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			tf_version = param.Value
 		}
 		if param.Key == "workdir" {
-			workdir = workdir + "/" + param.Value
+			workdir = param.Value
 		}
 		if param.Key == "init" {
 			init, _ = strconv.ParseBool(param.Value)
@@ -696,7 +696,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Terraform",
 		Type:    "action",
-		Version: "1.1.0-beta.2",
+		Version: "1.1.0-beta.3",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Terraform",
