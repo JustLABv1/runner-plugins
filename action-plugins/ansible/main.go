@@ -132,6 +132,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	becomePass := ""
 	verbose := 0
 	private_key := ""
+	vault := false
 	vault_password_file := ""
 	vault_password := ""
 
@@ -184,6 +185,9 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		}
 		if param.Key == "private_key" {
 			private_key = param.Value
+		}
+		if param.Key == "vault" {
+			vault = param.Value == "true"
 		}
 		if param.Key == "vault_password_file" {
 			vault_password_file = param.Value
@@ -366,9 +370,9 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		ansiblePlaybookOptions.VerboseVVVV = true
 	}
 
-	if vault_password_file != "" && vault_password == "" {
+	if vault && (vault_password_file != "" && vault_password == "") {
 		ansiblePlaybookOptions.VaultPasswordFile = vault_password_file
-	} else if vault_password != "" {
+	} else if vault && vault_password != "" {
 		// create a temporary file with the vault password
 		tmpfile, err := os.CreateTemp("", "vault-password")
 		if err != nil {
@@ -706,7 +710,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Ansible",
 		Type:    "action",
-		Version: "1.5.0-beta.3",
+		Version: "1.5.0-beta.4",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Ansible",
