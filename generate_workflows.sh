@@ -121,14 +121,22 @@ jobs:
         run: |
           # Build versioned binaries
           for os in darwin linux; do
-            for arch in amd64 arm64 386 arm ppc64le s390x; do
+            for arch in amd64 arm64 arm ppc64le s390x; do
+              # Skip darwin/386 as it's unsupported
+              if [ "$os" = "darwin" ] && [ "$arch" = "386" ]; then
+                continue
+              fi
               GOOS=${os} GOARCH=${arch} go build -o $plugin-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done
           
           # Build latest binaries
           for os in darwin linux; do
-            for arch in amd64 arm64 386 arm ppc64le s390x; do
+            for arch in amd64 arm64 arm ppc64le s390x; do
+              # Skip darwin/386 as it's unsupported
+              if [ "$os" = "darwin" ] && [ "$arch" = "386" ]; then
+                continue
+              fi
               GOOS=${os} GOARCH=${arch} go build -o $plugin-latest-${os}-${arch}
             done
           done
@@ -227,7 +235,7 @@ jobs:
   build-and-prerelease:
     name: Build and Pre-release $plugin
     needs: check-version
-    if: needs.check-version.outputs.is_prerelease == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.check-version.outputs.is_prerelease == 'true'
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
@@ -265,7 +273,11 @@ jobs:
         run: |
           # Build for multiple platforms
           for os in darwin linux; do
-            for arch in amd64 arm64 386 arm ppc64le s390x; do
+            for arch in amd64 arm64 arm ppc64le s390x; do
+              # Skip darwin/386 as it's unsupported
+              if [ "$os" = "darwin" ] && [ "$arch" = "386" ]; then
+                continue
+              fi
               GOOS=${os} GOARCH=${arch} go build -o $plugin-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done
