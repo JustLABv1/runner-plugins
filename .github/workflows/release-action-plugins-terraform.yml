@@ -49,8 +49,12 @@ jobs:
           # Build versioned binaries
           for os in darwin linux; do
             for arch in amd64 arm64 arm ppc64le s390x; do
-              # Skip darwin/386 as it's unsupported
-              if [ "$os" = "darwin" ] && [ "$arch" = "386" ]; then
+              # Skip unsupported darwin/386 and darwin/arm
+              if [ "$os" = "darwin" ] && ([[ "$arch" = "386" ]] || [[ "$arch" = "arm" ]]); then
+                continue
+              fi
+              # Skip unsupported linux/ppc64 (only linux/ppc64le is supported)
+              if [ "$os" = "linux" ] && [ "$arch" = "ppc64" ]; then
                 continue
               fi
               GOOS=${os} GOARCH=${arch} go build -o terraform-v${{ steps.read_version.outputs.version }}-${os}-${arch}
@@ -60,8 +64,12 @@ jobs:
           # Build latest binaries
           for os in darwin linux; do
             for arch in amd64 arm64 arm ppc64le s390x; do
-              # Skip darwin/386 as it's unsupported
-              if [ "$os" = "darwin" ] && [ "$arch" = "386" ]; then
+              # Skip unsupported darwin/386 and darwin/arm
+              if [ "$os" = "darwin" ] && ([[ "$arch" = "386" ]] || [[ "$arch" = "arm" ]]); then
+                continue
+              fi
+              # Skip unsupported linux/ppc64 (only linux/ppc64le is supported)
+              if [ "$os" = "linux" ] && [ "$arch" = "ppc64" ]; then
                 continue
               fi
               GOOS=${os} GOARCH=${arch} go build -o terraform-latest-${os}-${arch}
