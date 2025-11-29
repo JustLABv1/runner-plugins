@@ -121,14 +121,14 @@ jobs:
         run: |
           # Build versioned binaries
           for os in darwin linux; do
-            for arch in amd64 arm64; do
+            for arch in amd64 arm64 386 arm ppc64le s390x; do
               GOOS=${os} GOARCH=${arch} go build -o $plugin-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done
           
           # Build latest binaries
           for os in darwin linux; do
-            for arch in amd64 arm64; do
+            for arch in amd64 arm64 386 arm ppc64le s390x; do
               GOOS=${os} GOARCH=${arch} go build -o $plugin-latest-${os}-${arch}
             done
           done
@@ -265,7 +265,7 @@ jobs:
         run: |
           # Build for multiple platforms
           for os in darwin linux; do
-            for arch in amd64 arm64; do
+            for arch in amd64 arm64 386 arm ppc64le s390x; do
               GOOS=${os} GOARCH=${arch} go build -o $plugin-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done

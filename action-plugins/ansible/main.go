@@ -139,7 +139,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	for _, param := range request.Step.Action.Params {
 		if param.Key == "playbook" {
 			if strings.Contains(param.Value, "/") {
-				play = param.Value
+				play = request.Workspace + "/" + param.Value
 			} else {
 				play = param.Value
 			}
@@ -147,7 +147,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		if param.Key == "inventory" {
 			// if inventory is a path prefix with workspace
 			if strings.Contains(param.Value, "/") {
-				inventory = param.Value
+				inventory = request.Workspace + "/" + param.Value
 			} else {
 				inventory = param.Value
 			}
@@ -706,7 +706,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Ansible",
 		Type:    "action",
-		Version: "1.5.0-beta.2",
+		Version: "1.5.0-beta.3",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Ansible",
@@ -720,7 +720,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Title:       "Playbook",
 					Category:    "General",
 					Type:        "text",
-					Default:     request.Workspace + "/",
+					Default:     "repo/playbook.yml",
 					Required:    true,
 					Description: "Path to the playbook file",
 				},
@@ -729,7 +729,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Title:       "Inventory",
 					Category:    "General",
 					Type:        "text",
-					Default:     request.Workspace + "/",
+					Default:     "repo/inventory.ini",
 					Required:    true,
 					Description: "Path to the inventory file or comma separated host list",
 				},
@@ -857,13 +857,49 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					},
 				},
 				{
+					Key:         "vault",
+					Title:       "Vault",
+					Category:    "Vault",
+					Type:        "boolean",
+					Default:     "false",
+					Required:    true,
+					Description: "Use Ansible Vault to encrypt sensitive data",
+				},
+				{
+					Key:         "vault_password_method",
+					Title:       "Vault Password Method",
+					Type:        "select",
+					Default:     "",
+					Required:    false,
+					Description: "The vault password method to use",
+					Options: []models.Option{
+						{
+							Key:   "password",
+							Value: "Password",
+						},
+						{
+							Key:   "password_file",
+							Value: "Password File",
+						},
+					},
+					Category: "Vault",
+					DependsOn: models.DependsOn{
+						Key:   "vault",
+						Value: "true",
+					},
+				},
+				{
 					Key:         "vault_password_file",
 					Title:       "Vault Password File",
 					Category:    "Vault",
 					Type:        "text",
-					Default:     request.Workspace + "/",
+					Default:     "repo/vault_password_file",
 					Required:    false,
 					Description: "Path to Vault Password File",
+					DependsOn: models.DependsOn{
+						Key:   "vault_password_method",
+						Value: "password_file",
+					},
 				},
 				{
 					Key:         "vault_password",
@@ -873,6 +909,10 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Default:     "",
 					Required:    false,
 					Description: "Vault Password. This will override the vault_password_file",
+					DependsOn: models.DependsOn{
+						Key:   "vault_password_method",
+						Value: "password",
+					},
 				},
 				{
 					Key:         "check",
