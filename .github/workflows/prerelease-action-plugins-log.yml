@@ -70,7 +70,7 @@ jobs:
         run: |
           # Build for multiple platforms
           for os in darwin linux; do
-            for arch in amd64 arm64; do
+            for arch in amd64 arm64 386 arm ppc64le s390x; do
               GOOS=${os} GOARCH=${arch} go build -o log-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done

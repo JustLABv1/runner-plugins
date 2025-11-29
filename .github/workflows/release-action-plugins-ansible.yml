@@ -48,14 +48,14 @@ jobs:
         run: |
           # Build versioned binaries
           for os in darwin linux; do
-            for arch in amd64 arm64; do
+            for arch in amd64 arm64 386 arm ppc64le s390x; do
               GOOS=${os} GOARCH=${arch} go build -o ansible-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done
           
           # Build latest binaries
           for os in darwin linux; do
-            for arch in amd64 arm64; do
+            for arch in amd64 arm64 386 arm ppc64le s390x; do
               GOOS=${os} GOARCH=${arch} go build -o ansible-latest-${os}-${arch}
             done
           done

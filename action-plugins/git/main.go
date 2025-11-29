@@ -64,7 +64,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			branch = param.Value
 		}
 		if param.Key == "directory" {
-			directory = param.Value
+			directory = request.Workspace + "/" + param.Value
 		}
 		if param.Key == "username" {
 			username = param.Value
@@ -403,7 +403,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Git",
 		Type:    "action",
-		Version: "1.4.0-beta.2",
+		Version: "1.4.0-beta.3",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Git",
@@ -443,9 +443,9 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Key:         "directory",
 					Title:       "Directory",
 					Type:        "text",
-					Default:     request.Workspace + "/",
+					Default:     "repo",
 					Required:    true,
-					Description: "Path to clone the repository to",
+					Description: "Path to clone the repository to. Relative to the workspace",
 					Category:    "Repository",
 				},
 				{
