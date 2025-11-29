@@ -32,7 +32,7 @@ jobs:
   build-and-prerelease:
     name: Build and Pre-release alertmanager
     needs: check-version
-    if: needs.check-version.outputs.is_prerelease == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.check-version.outputs.is_prerelease == 'true'
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
