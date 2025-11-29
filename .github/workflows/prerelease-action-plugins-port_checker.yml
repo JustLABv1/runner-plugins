@@ -70,16 +70,13 @@ jobs:
         run: |
           # Build for multiple platforms
           for os in darwin linux; do
-            for arch in amd64 arm64 arm ppc64le s390x; do
-              # Skip unsupported darwin/386 and darwin/arm
-              if [ "$os" = "darwin" ] && ([[ "$arch" = "386" ]] || [[ "$arch" = "arm" ]]); then
-                continue
+            for arch in amd64 arm64; do
+              # Only build darwin-amd64, darwin-arm64, and linux-amd64
+              if [ "$os" = "darwin" ] && ([[ "$arch" = "amd64" ]] || [[ "$arch" = "arm64" ]]); then
+                GOOS=${os} GOARCH=${arch} go build -o port_checker-v${{ steps.read_version.outputs.version }}-${os}-${arch}
+              elif [ "$os" = "linux" ] && [ "$arch" = "amd64" ]; then
+                GOOS=${os} GOARCH=${arch} go build -o port_checker-v${{ steps.read_version.outputs.version }}-${os}-${arch}
               fi
-              # Skip unsupported linux/ppc64 (only linux/ppc64le is supported)
-              if [ "$os" = "linux" ] && [ "$arch" = "ppc64" ]; then
-                continue
-              fi
-              GOOS=${os} GOARCH=${arch} go build -o port_checker-v${{ steps.read_version.outputs.version }}-${os}-${arch}
             done
           done
 
