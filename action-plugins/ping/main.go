@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/JustLABv1/runner/pkg/executions"
+	"github.com/JustLABv1/runner/pkg/plugins"
 	probing "github.com/prometheus-community/pro-bing"
-	"github.com/v1Flows/runner/pkg/executions"
-	"github.com/v1Flows/runner/pkg/plugins"
 
-	"github.com/v1Flows/exFlow/services/backend/pkg/models"
+	"github.com/JustLABv1/justflow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -309,7 +309,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Ping",
 		Type:    "action",
-		Version: "1.6.0-beta.2",
+		Version: "1.6.0-beta.3",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Ping",

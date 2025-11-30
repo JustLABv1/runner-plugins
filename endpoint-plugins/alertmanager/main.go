@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"net/rpc"
 
+	"github.com/JustLABv1/runner/pkg/alerts"
+	"github.com/JustLABv1/runner/pkg/flows"
+	"github.com/JustLABv1/runner/pkg/plugins"
 	"github.com/google/uuid"
-	"github.com/v1Flows/runner/pkg/alerts"
-	"github.com/v1Flows/runner/pkg/flows"
-	"github.com/v1Flows/runner/pkg/plugins"
-
-	models "github.com/v1Flows/exFlow/services/backend/pkg/models"
 
 	"time"
+
+	models "github.com/JustLABv1/justflow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/tidwall/gjson"
@@ -67,7 +67,7 @@ func (p *AlertmanagerEndpointPlugin) EndpointRequest(request plugins.EndpointReq
 	alertData := models.Alerts{
 		Payload:  incPayload,
 		FlowID:   payload.Receiver,
-		RunnerID: request.Config.ExFlow.RunnerID,
+		RunnerID: request.Config.JustFlow.RunnerID,
 		Plugin:   "Alertmanager",
 		Status:   payload.Status,
 	}
@@ -154,7 +154,7 @@ func (p *AlertmanagerEndpointPlugin) Info(request plugins.InfoRequest) (models.P
 	return models.Plugin{
 		Name:    "Alertmanager",
 		Type:    "endpoint",
-		Version: "1.3.0-beta.2",
+		Version: "1.3.0-beta.3",
 		Author:  "JustNZ",
 		Endpoint: models.Endpoint{
 			ID:    "alertmanager",
