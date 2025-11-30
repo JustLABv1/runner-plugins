@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/v1Flows/runner/pkg/executions"
-	"github.com/v1Flows/runner/pkg/plugins"
+	"github.com/JustLABv1/runner/pkg/executions"
+	"github.com/JustLABv1/runner/pkg/plugins"
 
-	"github.com/v1Flows/exFlow/services/backend/pkg/models"
+	"github.com/JustLABv1/justflow/services/backend/pkg/models"
 
 	"github.com/hashicorp/go-plugin"
 )
