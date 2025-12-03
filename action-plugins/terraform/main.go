@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/rpc"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -57,7 +58,7 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 			tf_version = param.Value
 		}
 		if param.Key == "workdir" {
-			workdir = param.Value
+			workdir = request.Workspace + "/" + param.Value
 		}
 		if param.Key == "init" {
 			init, _ = strconv.ParseBool(param.Value)
@@ -147,6 +148,14 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 		Status:    "running",
 		StartedAt: time.Now(),
 	})
+	if err != nil {
+		return plugins.Response{
+			Success: false,
+		}, err
+	}
+
+	// switch to workdir
+	err = os.Chdir(workdir)
 	if err != nil {
 		return plugins.Response{
 			Success: false,
@@ -696,7 +705,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Terraform",
 		Type:    "action",
-		Version: "1.1.0-beta.4",
+		Version: "1.1.0-beta.5",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Terraform",
@@ -719,7 +728,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Title:       "Working Directory",
 					Type:        "text",
 					Category:    "General",
-					Default:     request.Workspace + "/",
+					Default:     ".",
 					Required:    true,
 					Description: "Working directory where terraform files are located",
 				},
@@ -746,7 +755,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 					Title:       "Plan Output",
 					Type:        "text",
 					Category:    "Plan",
-					Default:     request.Workspace + "/plan.tfplan",
+					Default:     "./plan.tfplan",
 					Required:    false,
 					Description: "Output the terraform plan to a file",
 					DependsOn: models.DependsOn{
