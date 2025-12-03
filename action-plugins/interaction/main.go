@@ -108,6 +108,33 @@ func (p *Plugin) ExecuteTask(request plugins.ExecuteTaskRequest) (plugins.Respon
 	// pull current action status from backend every 10 seconds
 	startTime := time.Now()
 	for {
+		if ctx.Err() != nil {
+			err := executions.UpdateStep(request.Config, request.Execution.ID.String(), models.ExecutionSteps{
+				ID: request.Step.ID,
+				Messages: []models.Message{
+					{
+						Title: "Cancel",
+						Lines: []models.Line{
+							{
+								Content:   "Action canceled",
+								Color:     "danger",
+								Timestamp: time.Now(),
+							},
+						},
+					},
+				},
+				Status:     "canceled",
+				FinishedAt: time.Now(),
+			})
+			if err != nil {
+				return plugins.Response{
+					Success: false,
+				}, err
+			}
+
+			return plugins.Response{Success: false, Canceled: true}, nil
+		}
+
 		stepData, err = executions.GetStep(request.Config, request.Execution.ID.String(), request.Step.ID.String())
 
 		if stepData.Interacted {
@@ -261,7 +288,7 @@ func (p *Plugin) Info(request plugins.InfoRequest) (models.Plugin, error) {
 	var plugin = models.Plugin{
 		Name:    "Interaction",
 		Type:    "action",
-		Version: "1.5.0-beta.3",
+		Version: "1.5.0-beta.4",
 		Author:  "JustNZ",
 		Action: models.Action{
 			Name:        "Interaction",
