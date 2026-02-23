@@ -6,8 +6,8 @@ require (
 	github.com/JustLABv1/justflow/services/backend v0.0.0-20251130104321-781435597f44
 	github.com/JustLABv1/runner v1.3.3-0.20251130114418-9c6e8455bd50
 	github.com/hashicorp/go-plugin v1.7.0
-	github.com/melbahja/goph v1.4.0
-	golang.org/x/crypto v0.45.0
+	github.com/melbahja/goph v1.5.0
+	golang.org/x/crypto v0.48.0
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pkg/sftp v1.13.7 // indirect
+	github.com/pkg/sftp v1.13.10 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
@@ -41,9 +41,9 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
